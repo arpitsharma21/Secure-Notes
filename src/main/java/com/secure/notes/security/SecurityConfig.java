@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 import java.time.LocalDate;
 
@@ -31,15 +32,30 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+//        configuring csrf token. Now we need a way to way csrf token value and there will be an endpoint for this so we will add a controller
+        http.csrf(
+                csrf ->csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+//                        with this thi csrf endpoint will not be authenticated by csrf
+                        .ignoringRequestMatchers("/api/auth/public/**")
+        );
+
         http.authorizeHttpRequests((requests) ->
                 requests
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/hello").permitAll()
+                        .requestMatchers("/api/csrf-token").permitAll()
                         .anyRequest().authenticated());
-//        For disabling csrf
-        http.csrf(AbstractHttpConfigurer::disable);
-        http.addFilterBefore(new CustomLoggingFilter(), UsernamePasswordAuthenticationFilter.class);
-        http.addFilterAfter(new RequestValidationFilter(), CustomLoggingFilter.class);
-        //http.formLogin(withDefaults());
+
+//        ========================  For disabling csrf =======================================
+//        http.csrf(AbstractHttpConfigurer::disable);
+//        ====================================================================================
+
+//        =============== Only for learning custom filters ======================================
+//        http.addFilterBefore(new CustomLoggingFilter(), UsernamePasswordAuthenticationFilter.class);
+//        http.addFilterAfter(new RequestValidationFilter(), CustomLoggingFilter.class);
+//        =======================================================================================
+
+        http.formLogin(withDefaults());
         http.httpBasic(withDefaults());
         return http.build();
     }
