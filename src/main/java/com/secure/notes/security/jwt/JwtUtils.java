@@ -52,10 +52,12 @@ public class JwtUtils {
     }
 
     public String getUsernameFromJwtToken(String token){
-        return Jwts.parser()
-                .verifyWith((SecretKey) key())
-                .build().parseSignedClaims(token)
-                .getPayload().getSubject();
+        return Jwts.parser()      //parser() method creates a JWT parser instance, which is responsible for validating and parsing a token.
+                .verifyWith((SecretKey) key())  //Indicates that the parser will verify the JWT using a signature key
+                .build() // Converts the configured parser into a reusable object that can parse JWTs
+                .parseSignedClaims(token)  //This method parses the JWT string (token) and ensures the token’s signature is valid otherwise throw exception
+                .getPayload() // Payload is one of the 3 parts of JWT. It contains information (claims) about the user, like their ID, username, or other data.
+                .getSubject(); // In the payload, there’s usually a field called sub (short for "subject"). This field typically contains the user ID or something unique that identifies the user.
     }
 
     private Key key(){
