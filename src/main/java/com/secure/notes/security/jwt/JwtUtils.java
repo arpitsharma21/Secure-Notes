@@ -43,12 +43,12 @@ public class JwtUtils {
 //    Creating token
     public String generateTokenFromUsername(UserDetails userDetails){
         String username = userDetails.getUsername();
-        return Jwts.builder()
-                .subject(username)
+        return Jwts.builder()  //used to construct a new JWT
+                .subject(username) //The subject is a standard claim in JWTs (sub field in the payload)
                 .issuedAt(new Date())
                 .expiration(new Date((new Date().getTime() + jwtExpirationMs)))
-                .signWith(key())
-                .compact();
+                .signWith(key()) //Signs the JWT with a cryptographic key for security
+                .compact(); //Finalizes the JWT building process and returns the token as a compact, URL-safe string.
     }
 
     public String getUsernameFromJwtToken(String token){
