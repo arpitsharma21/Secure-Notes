@@ -5,9 +5,14 @@ import com.secure.notes.models.Role;
 import com.secure.notes.models.User;
 import com.secure.notes.repositories.RoleRepository;
 import com.secure.notes.repositories.UserRepository;
+import com.secure.notes.security.jwt.AuthEntryPointJwt;
+import com.secure.notes.security.jwt.AuthTokenFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -30,21 +35,32 @@ import static org.springframework.security.config.Customizer.withDefaults;
 //)
 public class SecurityConfig {
 
+    @Autowired
+    private AuthEntryPointJwt unauthorizedHandler;
+
+    @Bean
+    public AuthTokenFilter authenticationJwtTokenFilter() {
+        return new AuthTokenFilter();
+    }
+
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-//        configuring csrf token. Now we need a way to way csrf token value and there will be an endpoint for this so we will add a controller
-        http.csrf(
-                csrf ->csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-//                        with this thi csrf endpoint will not be authenticated by csrf
-                        .ignoringRequestMatchers("/api/auth/public/**")
-        );
 
         http.authorizeHttpRequests((requests) ->
                 requests
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/hello").permitAll()
                         .requestMatchers("/api/csrf-token").permitAll()
-                        .anyRequest().authenticated());
+                        .requestMatchers("/api/auth/public/**").permitAll()
+                        .anyRequest().authenticated()
+        );
+
+// configuring csrf token. Now we need a way to way csrf token value and there will be an endpoint for this so we will add a controller
+        http.csrf(
+                csrf ->csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+//      with this thi csrf endpoint will not be authenticated by csrf
+                        .ignoringRequestMatchers("/api/auth/public/**")
+        );
 
 //        ========================  For disabling csrf =======================================
 //        http.csrf(AbstractHttpConfigurer::disable);
@@ -55,9 +71,19 @@ public class SecurityConfig {
 //        http.addFilterAfter(new RequestValidationFilter(), CustomLoggingFilter.class);
 //        =======================================================================================
 
+        //telling spring to use this class as default exception handling
+        http.exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler));
+        //This filter i.e authTokenFilter will run before usernamePassword filter
+        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+
         http.formLogin(withDefaults());
         http.httpBasic(withDefaults());
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
