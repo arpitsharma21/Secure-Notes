@@ -52,7 +52,7 @@ public class JwtUtils {
     }
 
     public String getUsernameFromJwtToken(String token){
-        return Jwts.parser()      //parser() method creates a JWT parser instance, which is responsible for validating and parsing a token.
+        return Jwts.parser()   //parser() method creates a JWT parser instance, which is responsible for validating and parsing a token.
                 .verifyWith((SecretKey) key())  //Indicates that the parser will verify the JWT using a signature key
                 .build() // Converts the configured parser into a reusable object that can parse JWTs
                 .parseSignedClaims(token)  //This method parses the JWT string (token) and ensures the token’s signature is valid otherwise throw exception
